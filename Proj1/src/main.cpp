@@ -3,26 +3,73 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//Any changes must be reflected in operators
+enum class AADir : int
+{
+	NVAL = 0x0,
+	RIGHT = 0x1,
+	UP = 0x2,
+	LEFT = 0x4,
+	DOWN = 0x8
+};
+
+AADir operator&(const AADir& a, const AADir& b)
+{ return (AADir)((int)a & (int)b); }
+AADir operator&=(AADir& a, const AADir& b)
+{ a = a & b; return a; }
+
+AADir operator|(const AADir& a, const AADir& b)
+{ return (AADir)((int)a | (int)b); }
+AADir operator|=(AADir& a, const AADir& b)
+{ a = a | b; return a; }
+
+AADir operator++(const AADir& dir)
+{
+	int i = (int)dir << 1;
+	if (i & 0x10)
+	{
+		i &= 0xF;
+		i |= 0x1;
+	}
+	return (AADir)i;
+}
+AADir operator--(const AADir& dir)
+{
+	int i = (int)dir;
+	if (i & 1)
+	{
+		i |= 0x10;
+	}
+	i >>= 1;
+	return (AADir)i;
+}
+
 typedef struct Vec2
 {
 	int x;
 	int y;
 
+	Vec2() { x = 0; y = 0; }
 	Vec2(int vx, int vy) { x = vx; y = vy; }
-	Vec2& operator +(const Vec2& a)
+	AADir getDirectionTo(Vec2 dest)
 	{
-		
-	}
-} _Vec2;
+		AADir dir = AADir::NVAL;
 
-enum class AADir : int
-{
-	NVAL = 0,
-	RIGHT = 1,
-	UP = 2,
-	LEFT = 4,
-	DOWN = 8
-};
+		if (dest.x > x)
+			dir |= AADir::RIGHT;
+		else if (dest.x < x)
+			dir |= AADir::LEFT;
+
+		if (dest.y > y)
+			dir |= AADir::UP;
+		else if (dest.y < y)
+			dir |= AADir::DOWN;
+
+		return dir;
+	}
+	Vec2 operator +(const Vec2& a) const
+	{ return Vec2(x + a.x, y + a.y); }
+} _Vec2;
 
 typedef struct AALine
 {
@@ -59,7 +106,7 @@ typedef struct AAPoly
 		edges[edgeCount++] = line;
 	}
 	*/
-	inline void EnsureCapacity(int capacity)
+	inline void ensureCapacity(int capacity)
 	{
 		if (edgeCapacity >= capacity)
 			return;
@@ -69,7 +116,7 @@ typedef struct AAPoly
 		if (!tmp) exit(1);
 		edges = (AALine*)tmp;
 	}
-	inline void TrimCapacity()
+	inline void trimCapacity()
 	{
 		if (edgeCapacity == edgeCount)
 			return;
@@ -78,10 +125,23 @@ typedef struct AAPoly
 		if (!tmp) exit(1);
 		edges = (AALine*)tmp;
 	}
-
-	inline bool CanCutRect(Rect rect, Vec2 pos)
+	inline bool canCutRect(Rect rect, Vec2 pos)
 	{
+		Vec2 vertices[4];
+		rect.getVertices(pos, vertices);
 
+		#ifdef __GNUG__
+		#pragma GCC unroll 4
+		#endif
+		for (int v = 0; v < 4; v++)
+		{
+			for (int i = 0; i < edgeCount; i++)
+			{
+				//Check if direction from vertex to edge corner
+				//Is "left" of edge direction
+				//(Doesn't apply to concave polygons FUCK)
+			}
+		}
 	}
 } _AAPoly;
 
@@ -95,16 +155,13 @@ typedef struct Rect
 
 	Rect() : corner(Vec2(0,0)), price(0), density(0) {}
 	Rect(int rw, int rh, int rp) : corner(Vec2(rw, rh)), price(rp), density((rp << 12) / (rw * rh)) {}
-	Vec2 *GetVertices(Vec2 offset)
+	//Counter-clockwise
+	void getVertices(Vec2 offset, Vec2 *vertices)
 	{
-		Vec2 *ret = (Vec2*)malloc(4 *sizeof(Vec2));
-		if (!ret) exit(1);
-
-		ret[0] = offset;
-		ret[1] = Vec2(offset.x + corner.x, offset.y);
-		ret[2];
-
-		return ret;
+		vertices[0] = offset;
+		vertices[1] = offset + Vec2(corner.x, 0);
+		vertices[2] = offset + Vec2(corner.x, corner.y);
+		vertices[3] = offset + Vec2(0, corner.y);
 	}
 } _Rect;
 
