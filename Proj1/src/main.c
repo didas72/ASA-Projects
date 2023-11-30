@@ -5,14 +5,15 @@
 #pragma GCC diagnostic ignored "-Wunused-result"
 
 #define MAX(a, b) ((a > b) ? a : b)
-#define DIV_UP(a, b) ((a-1)/b+1)
+#define DIV_UP(a, b) (a>>1)
 #define MATRIX(x, y) maxMatrix[INDEX(x, y)]
-#define INDEX(x, y) (1 + (x) + (y) * (srcW + 1))
+#define INDEX(x, y) (x + (y) * (srcW + 1))
 
 int calculateMax(int x, int y);
 
 #ifdef DEBUG
 void printMatrix();
+void printMatrixCSV();
 #endif
 
 int srcW, srcH, *maxMatrix;
@@ -29,11 +30,8 @@ int main()
 	while ((--x) >= 0)
 	{
 		scanf("%d %d %d", &w, &h, &p);
-		if (MATRIX(w, h) < p)
-		{
-			if (w <= srcW && h <= srcH) MATRIX(w, h) = p;
-			if (h <= srcW && w <= srcH) MATRIX(h, w) = p;
-		}
+		if (w <= srcW && h <= srcH && MATRIX(w, h) < p) MATRIX(w, h) = p;
+		if (h <= srcW && w <= srcH && MATRIX(h, w) < p) MATRIX(h, w) = p;
 	}
 	/*Compute*/
 	for (y = 1; y <= srcH; y++)
@@ -43,19 +41,21 @@ int main()
 	}
 	/*Debug matrix*/
 	#ifdef DEBUG
-	printMatrix();
-	printf("FINAL: ");
+	/*printMatrixCSV();*/
+	/*printMatrix();*/
+	/*printf("FINAL: ");*/
 	#endif
 	/*Print result and exit*/
 	printf("%d\n", MATRIX(srcW, srcH));
+	free(maxMatrix);
 	return 0;
 }
 
 int calculateMax(int posX, int posY)
 {
 	int i, bestScore = MATRIX(posX, posY);
-	for (i = 0; i <= DIV_UP(posX, 2); i++) bestScore = MAX(bestScore, MATRIX(i, posY) + MATRIX(posX - i, posY));
-	for (i = 0; i <= DIV_UP(posY, 2); i++) bestScore = MAX(bestScore, MATRIX(posX, i) + MATRIX(posX, posY - i));
+	for (i = 1; i <= DIV_UP(posX, 2); i++) bestScore = MAX(bestScore, MATRIX(i, posY) + MATRIX(posX - i, posY));
+	for (i = 1; i <= DIV_UP(posY, 2); i++) bestScore = MAX(bestScore, MATRIX(posX, i) + MATRIX(posX, posY - i));
 	return MATRIX(posX, posY) = bestScore;
 }
 
@@ -76,6 +76,16 @@ void printMatrix()
 	{
 		printf("%4d", x);
 		for (y = 0; y <= srcH; y++) printf(" | %4d", MATRIX(x, y));
+		printf("\n");
+	}
+}
+void printMatrixCSV()
+{
+	int x, y;
+	for (x = 1; x <= srcW; x++)
+	{
+		printf("%d", x);
+		for (y = 1; y <= srcH; y++) printf("%4d,", MATRIX(x, y));
 		printf("\n");
 	}
 }

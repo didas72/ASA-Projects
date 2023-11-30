@@ -1,7 +1,7 @@
 CC=gcc
-C_FLAGS=-ansi -Wall -Wextra -Wno-unknown-pragmas -ggdb -lm# -DDEBUG 
+C_FLAGS=-ansi -Wall -Wextra -Wno-unknown-pragmas -ggdb -lm -DDEBUG
 FINAL_C_FLAGS=-O3 -ansi -Wall -lm
-VAL_FLAGS=--leak-check=full
+VAL_FLAGS=--leak-check=full -s
 
 BIN=build/bin
 TEST=tests
