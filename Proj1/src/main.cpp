@@ -3,16 +3,7 @@
 #include <string.h>
 
 #define MAX(a, b) ((a > b) ? a : b)
-
-typedef struct Rect
-{
-	int w, h;
-	int price;
-	size_t area;
-
-	Rect() : w(0), h(0), price(0), area(0) {}
-	Rect(int rw, int rh, int rp) : w(rw), h(rh), price(rp), area(rw*rh) {}
-} _Rect;
+#define DIV_UP(a, b) ((a-1)/b+1)
 
 typedef struct HalfMatrix
 {
@@ -28,14 +19,14 @@ public:
 		size_t total = triangle + rect;
 		tri = triangle;
 		store = (int*)malloc(total * sizeof(int));
-		memset(store, 0xFF, total * sizeof(int)); //set all to -1
+		memset(store, 0, total * sizeof(int)); //set all to 0
 	}
 
 	inline int& operator() (int x, int y)
 	{
 		size_t index;
-		x -= 1;//start at index 0
-		y -= 1;//start at index 0
+		--x;
+		--y;
 
 		if (x > y)
 		{
@@ -63,25 +54,23 @@ inline int fillMatrix();
 void printMatrix();
 #endif
 
-Rect src;
+int srcW, srcH;
 int requestCount;
-Rect *requests;
 HalfMatrix maxMatrix;
 
 int main()
 {
 	acceptSourceRect();
+	maxMatrix = HalfMatrix(srcW, srcH);
 	acceptPossibleRects();
 
-	maxMatrix = HalfMatrix(src.w, src.h);
-
-	fillMatrix();
-
-	int max = calculateMax(src.w, src.h);
+	int max = fillMatrix();
 
 	#ifdef DEBUG
 	printMatrix();
 	#endif
+
+	printf("%d\n", max);
 
 	return 0;
 }
@@ -92,98 +81,57 @@ inline void acceptSourceRect()
 	int w, h;
 	scanf("%d %d", &w, &h);
 	if (w <= h) //Make rectangle vertical
-		src = Rect(w, h, 0);
+	{ srcW = w; srcH = h;}
 	else
-		src = Rect(h, w, 0);
+	{ srcW = h; srcH = w; }
 }
 
 inline void acceptPossibleRects()
 {
 	scanf("%d", &requestCount);
 
-	requestCount <<= 1;
-	requests = (Rect*)malloc(requestCount * sizeof(Rect));
-
 	int i = 0; int w, h, p;
-	while (i+1 < requestCount)
+	while (i < requestCount)
 	{
 		scanf("%d %d %d", &w, &h, &p);
-		requests[i] = Rect(w, h, p);
-		requests[i+1] = Rect(h, w, p);
-		i += 2;
+
+		if (maxMatrix(w, h) < p)
+		{
+			maxMatrix(w, h) = p;
+			maxMatrix(h, w) = p;
+		}
+
+		i++;
 	}
 }
 
-inline int calculateMax(int x, int y)
+inline int calculateMax(int posX, int posY)
 {
-	int buff = maxMatrix(x, y);
-	if (buff != -1)
-		return buff;
+	if (posX == 0 || posY == 0) return 0;
 
-	int bestScore = 0;
-	int bestIndex = -1;
+	int bestScore = maxMatrix(posX, posY);
 
-	for (int i = 0; i < requestCount; i++)
-	{
-		Rect me = requests[i];
+	for (int x = 1; x <= DIV_UP(posX, 2); x++)
+		bestScore = MAX(bestScore, maxMatrix(x, posY) + maxMatrix(posX - x, posY));
+	for (int y = 1; y <= DIV_UP(posY, 2); y++)
+		bestScore = MAX(bestScore, maxMatrix(posX, y) + maxMatrix(posX, posY - y));
 
-		//Check piece fits
-		if (me.w > x || me.h > y) continue;
-
-		int score = me.price;
-		int new1X, new1Y, new2X, new2Y;
-
-		//Cut this particular piece
-		if (me.w < x) //must cut vertically
-		{
-			new1X = x - me.w;
-			new1Y = y;
-
-			if (me.h < y) //must also cut horizontally (after vertical cut)
-			{
-				new2X = x;
-				new2Y = y - me.h;
-				score = MAX(score, me.price + calculateMax(new1X, new1Y) + calculateMax(new2X, new2Y));
-			}
-			else
-				score = MAX(score, me.price + calculateMax(new1X, new1Y));
-		}
-		if (me.h < y) //must cut horizontally
-		{
-			new1X = x;
-			new1Y = y - me.h;
-
-			if (me.w < x) //must also cut vertically (after horizontal cut)
-			{
-				new2X = x - me.w;
-				new2Y = y;
-				score = MAX(score, me.price + calculateMax(new1X, new1Y) + calculateMax(new2X, new2Y));
-			}
-			else
-				score = MAX(score, me.price + calculateMax(new1X, new1Y));
-		}
-
-		if (score > bestScore)
-		{
-			bestScore = score;
-			bestIndex = i;
-		}
-	}
-
-	return maxMatrix(x,y) = bestScore;
+	return maxMatrix(posX, posY) = bestScore;
 }
 
 inline int fillMatrix()
 {
-	for (int y = 1; y <= src.h; y++)
+	for (int y = 1; y <= srcH; y++)
 	{
-		for (int x = 1; x <= y && x <= src.w; x++)
+		for (int x = 1; x <= y && x <= srcW; x++)
 		{
-			calculateMax(x, y);
+			//printf("%d %d\n", x, y);
+			//calculateMax(x, y);
 		}
+		printf("%d:%d = %d\n", 1, y, calculateMax(1, y));
 	}
 
-	return maxMatrix(src.w, src.h);
+	return maxMatrix(srcH, srcW);
 }
 
 
@@ -194,17 +142,17 @@ void printMatrix()
 {
 	printf("\n===MATRIX DUMP===\n#   ");
 
-	for (int y = 1; y <= src.h; y++)
+	for (int y = 1; y <= srcH; y++)
 		printf(" | %4d", y);
 	printf("\n----");
-	for (int y = 1; y <= src.h; y++)
+	for (int y = 1; y <= srcH; y++)
 		printf("-+-----");
 	printf("-\n");
 
-	for (int x = 1; x <= src.w; x++)
+	for (int x = 1; x <= srcW; x++)
 	{
 		printf("%4d", x);
-		for (int y = 1; y <= src.h; y++)
+		for (int y = 1; y <= srcH; y++)
 		{
 			if (y >= x)
 				printf(" | %4d", maxMatrix(x, y));
