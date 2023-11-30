@@ -1,35 +1,28 @@
-CC=g++
-C_FLAGS=-DDEBUG -Wall -Wextra -Wno-unknown-pragmas -std=c++11 -ggdb -lm
-FINAL_C_FLAGS=-std=c++11 -O3 -Wall -lm
+CC=gcc
+C_FLAGS=-DDEBUG -Wall -Wextra -Wno-unknown-pragmas -ggdb -lm
+FINAL_C_FLAGS=-O3 -ansi -Wall -lm
 VAL_FLAGS=--leak-check=full
 
-SRC=src
-OBJ=build/obj
 BIN=build/bin
-
 OUTBIN=$(BIN)/main
-
-SRCS=$(wildcard $(SRC)/*.cpp)
-OBJS=$(patsubst $(SRC)/%.cpp, $(OBJ)/%.o, $(SRCS))
+GENBIN=./supermarble
 
 
-.PHONY: all build debug memleak clean loc setup
+.PHONY: all build debug memleak gen_build clean setup
 
 
 all: build
 build: $(OUTBIN)
+release: C_FLAGS=$(FINAL_C_FLAGS)
+release: clean $(OUTBIN)
+gen_build: $(GENBIN)
 
 run: $(OUTBIN)
 	./$(OUTBIN)
 
-$(OUTBIN): $(OBJS)
+$(OUTBIN): src/main.c
 	@mkdir -p $(@D)
-	$(CC) $(C_FLAGS) $(OBJS) -o $@
-
-$(OBJ)/%.o: $(SRC)/%.cpp
-	@mkdir -p $(@D)
-	$(CC) $(C_FLAGS) -c $< -o $@
-
+	$(CC) $^ $(C_FLAGS) -o $@
 
 debug: $(OUTBIN)
 	gdb ./$(OUTBIN)
@@ -37,14 +30,13 @@ debug: $(OUTBIN)
 memleak: $(OUTBIN)
 	valgrind $(VAL_FLAGS) $(OUTBIN)
 
+$(GENBIN): src/aux/gen_supermarble.cpp
+	g++ -std=c++11 -O3 -Wall $^ -o $(GENBIN)
 
 clean:
-	$(RM) -r $(OBJ) $(BIN)
-
-loc:
-	scc -s lines --no-cocomo --no-gitignore -w --size-unit binary --exclude-ext md,makefile,json
+	$(RM) -r $(BIN)
 
 setup:
 	sudo apt update
 	sudo apt upgrade -y
-	sudo apt install g++ gdb valgrind
+	sudo apt install gcc gdb valgrind
