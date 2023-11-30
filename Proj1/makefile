@@ -1,5 +1,5 @@
 CC=g++
-C_FLAGS=-Wall -Wextra -Wno-unknown-pragmas -std=c++11 -ggdb
+C_FLAGS=-DDEBUG -Wall -Wextra -Wno-unknown-pragmas -std=c++11 -ggdb -lm
 FINAL_C_FLAGS=-std=c++11 -O3 -Wall -lm
 VAL_FLAGS=--leak-check=full
 
