@@ -5,46 +5,6 @@
 #define MAX(a, b) ((a > b) ? a : b)
 #define DIV_UP(a, b) ((a-1)/b+1)
 
-typedef struct HalfMatrix
-{
-	int *store;
-	int w, h;
-	size_t tri;
-
-public:
-	HalfMatrix() : store(NULL), w(0), h(0) {}
-	HalfMatrix(int mw, int mh) : w(mw), h(mh) {
-		size_t triangle = (mw*(mw+1)) >> 1;
-		size_t rect = (mh-mw)*mw;
-		size_t total = triangle + rect;
-		tri = triangle;
-		store = (int*)malloc(total * sizeof(int));
-		memset(store, 0, total * sizeof(int)); //set all to 0
-	}
-
-	inline int& operator() (int x, int y)
-	{
-		size_t index;
-		--x;
-		--y;
-
-		if (x > y)
-		{
-			int tmp = x;
-			x = y;
-			y = tmp;
-		}
-
-		if (y < w) //triangle
-			index = (y*(y+1)>>1) + x;
-		else //rect
-			index = tri + (y-w) * w + x;
-
-		//printf("{[%d,%d]=%ld}", x, y, index);
-		return store[index];
-	}
-} _HalfMatrix;
-
 inline void acceptSourceRect();
 inline void acceptPossibleRects();
 inline int calculateMax(int x, int y);
@@ -56,12 +16,12 @@ void printMatrix();
 
 int srcW, srcH;
 int requestCount;
-HalfMatrix maxMatrix;
+int* maxMatrix;
 
 int main()
 {
 	acceptSourceRect();
-	maxMatrix = HalfMatrix(srcW, srcH);
+	maxMatrix = (int*)malloc();
 	acceptPossibleRects();
 
 	int max = fillMatrix();
