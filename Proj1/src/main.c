@@ -42,7 +42,7 @@ int main()
 	/*Debug matrix*/
 	#ifdef DEBUG
 	/*printMatrixCSV();*/
-	/*printMatrix();*/
+	printMatrix();
 	/*printf("FINAL: ");*/
 	#endif
 	/*Print result and exit*/
