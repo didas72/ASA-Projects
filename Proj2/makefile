@@ -1,6 +1,6 @@
-CC=gcc
-C_FLAGS=-ansi -Wall -Wextra -Wno-unknown-pragmas -ggdb -lm -DDEBUG
-FINAL_C_FLAGS=-O3 -ansi -Wall -lm
+CC=g++
+C_FLAGS=-Wall -Wextra -Wno-unknown-pragmas -ggdb -lm -DDEBUG
+FINAL_C_FLAGS=-std=c++11 -O3 -Wall -lm
 VAL_FLAGS=--leak-check=full -s
 
 BIN=build/bin
@@ -23,7 +23,7 @@ gen_build: $(GENBIN)
 run: $(OUTBIN)
 	./$(OUTBIN)
 
-$(OUTBIN): src/main.c
+$(OUTBIN): src/main.cpp
 	@mkdir -p $(@D)
 	$(CC) $^ $(C_FLAGS) -o $@
 
@@ -32,9 +32,6 @@ debug: $(OUTBIN)
 
 memleak: $(OUTBIN)
 	valgrind $(VAL_FLAGS) $(OUTBIN)
-
-$(GENBIN): src/aux/gen_supermarble.cpp
-	g++ -std=c++11 -O3 -Wall $^ -o $(GENBIN)
 
 clean:
 	$(RM) -r $(BIN)
