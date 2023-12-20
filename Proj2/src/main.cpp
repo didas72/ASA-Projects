@@ -86,8 +86,6 @@ int compute_max()
 		}
 	}
 
-	printf("First DFS with %ld elements.\n", ret_stack.size());
-
 	std::vector<std::vector<int>> sccs;
 	std::vector<int> scc_map = std::vector<int>(normal.size());
 
@@ -101,8 +99,6 @@ int compute_max()
 		ret_stack.pop();
 		std::vector<int> scc;
 
-		printf("Checking %d with status %d. (new scc)\n", v, state[v]);
-
 		if (state[v] == VISITED)
 			continue;
 
@@ -110,7 +106,6 @@ int compute_max()
 		iter_stack.push(v);
 		scc.push_back(v);
 		scc_map[v] = sccs.size();
-		printf("Pushing connection %d.\n", v);
 
 		while (!iter_stack.empty())
 		{
@@ -122,7 +117,6 @@ int compute_max()
 				if (state[cur] != UNVISITED)
 					continue;
 
-				printf("Pushing connection %d.\n", cur);
 				state[cur] = VISITED;
 				iter_stack.push(cur);
 				scc.push_back(cur);
@@ -132,8 +126,6 @@ int compute_max()
 
 		sccs.push_back(scc);
 	}
-
-	printf("Second dfs with %ld sccs.\n", sccs.size());
 
 	//now must convert sccs to single nodes
 	//sccs holds all scc node arrays
@@ -148,43 +140,11 @@ int compute_max()
 		for (auto n : normal[v])
 		{
 			int vt = scc_map[v], nt = scc_map[n];
-			printf("%d->%d %d\n", n, nt, vt);
 
 			if (vt != nt)
 				dag[vt].push_back(nt);
 		}
 	}
-
-	printf("New\n");
-	for (auto j : dag)
-	{
-		for (auto k : j)
-			printf("%d ", k);
-		printf(".\n");
-	}
-
-	//TODO: Replace with better
-	/*for (auto scc : sccs)
-	{
-		std::vector<int> conns;
-
-		printf("New scc.\n");
-
-		for (int node : scc)
-		{
-			for (int conn : normal[node])
-			{
-				int translated = scc_map[conn];
-				if (!contains(conns, translated))
-				{
-					printf("Adding %d (%d translated).\n", conn, translated);
-					conns.push_back(translated);
-				}
-			}
-		}
-
-		dag.push_back(conns);
-	}*/
 
 	std::vector<int> max_dist = std::vector<int>(dag.size());
 	int abs_max = 0;
