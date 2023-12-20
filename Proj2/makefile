@@ -6,19 +6,17 @@ VAL_FLAGS=--leak-check=full -s
 BIN=build/bin
 TEST=tests
 OUTBIN=$(BIN)/main
-GENBIN=./supermarble
 
 TESTS=$(wildcard $(TEST)/*.in)
 RESULTS=$(patsubst %.in,%.out,$(TESTS))
 
-.PHONY: all build debug memleak gen_build clean setup test
+.PHONY: all build debug memleak clean setup test
 
 
 all: build
 build: $(OUTBIN)
 release: C_FLAGS=$(FINAL_C_FLAGS)
 release: clean $(OUTBIN)
-gen_build: $(GENBIN)
 
 run: $(OUTBIN)
 	./$(OUTBIN)
