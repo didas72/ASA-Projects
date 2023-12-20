@@ -14,30 +14,12 @@
 #define GRAY 1
 #define BLACK 2
 #define UNVISITED BLACK
+#define WIP 3
 #define VISITED 4
-
-int max_recursive(int cur);
 
 std::vector<std::vector<int>> normal, transposed;
 
-template <typename T>
-T spop(std::stack<T> stack)
-{
-	T val = stack.top();
-	stack.pop();
-	return val;
-}
-
-void print_graph(std::vector<std::vector<int>> graph)
-{
-	for (int i = 0; i < (int)graph.size(); i++)
-	{
-		printf("%d: ", i+1);
-		for (int j = 0; j < (int)graph[i].size(); j++)
-			printf("%d ", graph[i][j]+1);
-		printf("\n");
-	}
-}
+int compute_max();
 
 template <typename T>
 inline bool contains(std::vector<T> vec, T element)
@@ -66,39 +48,22 @@ int main()
 		transposed[end-1].push_back(start-1);
 	}
 
+	//DBG
+	//printf("Finished read.\n");
+
 	//Compute stuff
-
-	int max = 0;
-	for (int i = 0; i < node_count; i++)
-		max = MAX(max, max_recursive(i));
-
+	int max = compute_max();
 	printf("%d\n", max);
-
 	return 0;
 }
 
-int max_recursive(int cur)
-{
-	int conn_count = normal[cur].size();
-	int max = 0;
-
-	if (!conn_count)
-		return 0;
-
-	for (int i = 1; i <= conn_count; i++)
-		max = MAX(max, max_recursive(graph[cur][i]));
-
-	return max + 1;
-}
-
-
-std::stack<int> dfs()
+int compute_max()
 {
 	std::stack<int> ret_stack;
 	std::stack<int> iter_stack;
 	std::vector<char> state = std::vector<char>(normal.size(), WHITE);
 
-	for (int v = 0; v < normal.size(); v++)
+	for (int v = 0; v < (int)normal.size(); v++)
 	{
 		if (state[v] != WHITE)
 			continue;
@@ -123,9 +88,12 @@ std::stack<int> dfs()
 				ret_stack.push(cur);
 			}
 			else //black, should never reach here
-				continue;
+				iter_stack.pop();
 		}
 	}
+
+	//DBG
+	printf("Finished first run with %ld els.\n", ret_stack.size());
 
 	std::vector<std::vector<int>> sccs;
 	std::vector<int> scc_map = std::vector<int>(normal.size());
@@ -135,19 +103,27 @@ std::stack<int> dfs()
 	//reuse iter_stack for this dfs
 	while (!ret_stack.empty())
 	{
-		int v = spop(ret_stack);
-		if (state[v] == VISITED)
+		int v = ret_stack.top();
+		ret_stack.pop();
+
+		if (state[v] != UNVISITED)
 			continue;
 
 		state[v] = VISITED;
+		iter_stack.push(v);
 		bool is_scc = true;
 
+		//printf("Transposed[%d] has %ld.\n", v, transposed[v].size());
 		for (int cur : transposed[v])
 		{
+			printf("Checking to push %d with state %d.\n", cur, state[cur]);
+
 			if (state[cur] == VISITED)
 				continue;
 
+			printf("Pushing\n");
 			iter_stack.push(cur);
+			state[cur] = WIP;
 			is_scc = false;
 		}
 
@@ -157,13 +133,18 @@ std::stack<int> dfs()
 		std::vector<int> scc = std::vector<int>(iter_stack.size());
 		while (!iter_stack.empty())
 		{
-			int popped = spop(iter_stack);
+			int popped = iter_stack.top();
+			iter_stack.pop();
 			scc.push_back(popped);
+			printf("Popped %d.\n", popped);
 			scc_map[popped] = sccs.size();
 		}
 
 		sccs.push_back(scc);
 	}
+
+	//DBG
+	printf("Finished second run with %ld els.\n", sccs.size());
 
 	//now must convert sccs to single nodes
 	//sccs holds all scc node arrays
@@ -171,26 +152,49 @@ std::stack<int> dfs()
 	state.clear(); //free some more memory
 	transposed.clear(); //moar memory
 
-	std::vector<std::vector<int>> dag = std::vector<std::vector<int>>(sccs.size());
+	std::vector<std::vector<int>> dag = std::vector<std::vector<int>>();
 
 	//TODO: Replace with better
 	for (auto scc : sccs)
 	{
 		std::vector<int> conns;
 
+		printf("Starting scc.\n");
 		for (int node : scc)
 		{
 			for (int conn : normal[node])
 			{
 				int translated = scc_map[conn];
 				if (!contains(conns, translated))
+				{
 					conns.push_back(translated);
+					printf("Pushing %d to scc.\n", conn);
+				}
 			}
 		}
 
 		dag.push_back(conns);
 	}
 
+	printf("DAG len: %ld\n", dag.size());
+
+	std::vector<int> max_dist = std::vector<int>(dag.size());
+	int abs_max = 0;
+
 	//now the clean graph should be in dag
-	
+	for (int i = dag.size() - 1; i >= 0; i--)
+	{
+		int cur_max = 0;
+
+		for (int next : dag[i])
+		{
+			int local_max = max_dist[next] + 1;
+			cur_max = MAX(cur_max, local_max);
+		}
+
+		max_dist[i] = cur_max;
+		abs_max = MAX(abs_max, cur_max);
+	}
+
+	return abs_max;
 }
