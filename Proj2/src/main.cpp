@@ -48,9 +48,6 @@ int main()
 		transposed[end-1].push_back(start-1);
 	}
 
-	//DBG
-	//printf("Finished read.\n");
-
 	//Compute stuff
 	int max = compute_max();
 	printf("%d\n", max);
@@ -92,9 +89,6 @@ int compute_max()
 		}
 	}
 
-	//DBG
-	printf("Finished first run with %ld els.\n", ret_stack.size());
-
 	std::vector<std::vector<int>> sccs;
 	std::vector<int> scc_map = std::vector<int>(normal.size());
 
@@ -113,15 +107,11 @@ int compute_max()
 		iter_stack.push(v);
 		bool is_scc = true;
 
-		//printf("Transposed[%d] has %ld.\n", v, transposed[v].size());
 		for (int cur : transposed[v])
 		{
-			printf("Checking to push %d with state %d.\n", cur, state[cur]);
-
 			if (state[cur] == VISITED)
 				continue;
 
-			printf("Pushing\n");
 			iter_stack.push(cur);
 			state[cur] = WIP;
 			is_scc = false;
@@ -136,15 +126,11 @@ int compute_max()
 			int popped = iter_stack.top();
 			iter_stack.pop();
 			scc.push_back(popped);
-			printf("Popped %d.\n", popped);
 			scc_map[popped] = sccs.size();
 		}
 
 		sccs.push_back(scc);
 	}
-
-	//DBG
-	printf("Finished second run with %ld els.\n", sccs.size());
 
 	//now must convert sccs to single nodes
 	//sccs holds all scc node arrays
@@ -159,24 +145,18 @@ int compute_max()
 	{
 		std::vector<int> conns;
 
-		printf("Starting scc.\n");
 		for (int node : scc)
 		{
 			for (int conn : normal[node])
 			{
 				int translated = scc_map[conn];
 				if (!contains(conns, translated))
-				{
 					conns.push_back(translated);
-					printf("Pushing %d to scc.\n", conn);
-				}
 			}
 		}
 
 		dag.push_back(conns);
 	}
-
-	printf("DAG len: %ld\n", dag.size());
 
 	std::vector<int> max_dist = std::vector<int>(dag.size());
 	int abs_max = 0;
